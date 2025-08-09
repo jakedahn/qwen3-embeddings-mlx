@@ -4,8 +4,9 @@
 
 Works great on all Apple Silicon Macs including the latest M4 chips!
 
-![Performance](https://img.shields.io/badge/Speed-44K_tokens/sec-green)
-![Models](https://img.shields.io/badge/Models-0.6B_|_4B_|_8B-blue)
+![0.6B Speed](https://img.shields.io/badge/0.6B-44K_tokens/sec-green)
+![4B Speed](https://img.shields.io/badge/4B-18K_tokens/sec-blue)
+![8B Speed](https://img.shields.io/badge/8B-11K_tokens/sec-purple)
 ![Platform](https://img.shields.io/badge/Platform-Apple_Silicon-black)
 
 ## ✨ What is this?
