@@ -55,7 +55,7 @@ for model_name, config in AVAILABLE_MODELS.items():
     for alias in config.get("alias", []):
         MODEL_ALIASES[alias.lower()] = model_name
 MIN_BATCH_SIZE = 1
-DEFAULT_MAX_BATCH = 32
+DEFAULT_MAX_BATCH = 1024  # Increased for stress testing
 DEFAULT_MAX_LENGTH = 8192
 DEFAULT_PORT = 8000
 DEFAULT_HOST = "0.0.0.0"
@@ -411,7 +411,7 @@ class BatchEmbedRequest(BaseModel):
         ...,
         description="List of texts to embed",
         min_length=1,
-        max_length=config.max_batch_size
+        max_length=1024  # Allow larger batches for stress testing
     )
     model: Optional[str] = Field(
         default=None,

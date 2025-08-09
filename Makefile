@@ -18,6 +18,8 @@ help:
 	@echo "  make benchmark-small  Quick benchmark (0.6B model)"
 	@echo "  make benchmark-medium Quick benchmark (4B model)"
 	@echo "  make benchmark-large  Quick benchmark (8B model)"
+	@echo "  make benchmark-stress Stress test with large batches (up to 512)"
+	@echo "  make benchmark-extreme EXTREME stress test (batches up to 1024!)"
 	@echo ""
 
 # Install production dependencies
@@ -107,6 +109,17 @@ benchmark-medium:
 
 benchmark-large:
 	python tests/benchmark.py --quick --model large
+
+# Stress tests (make your fans spin!)
+benchmark-stress:
+	@echo "⚡ Running stress test with large batches..."
+	python tests/benchmark.py --stress --model all
+
+benchmark-extreme:
+	@echo "🔥 EXTREME STRESS TEST - This will push your system hard!"
+	@echo "Press Ctrl+C to cancel..."
+	@sleep 3
+	python tests/benchmark.py --extreme --model all
 
 # Docker build (experimental)
 docker-build:

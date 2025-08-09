@@ -165,12 +165,15 @@ def benchmark_single_latency(client: BenchmarkClient, iterations: int = 100, mod
     
     return stats
 
-def benchmark_batch_throughput(client: BenchmarkClient, model: str = None, model_name: str = None) -> Dict[str, Any]:
+def benchmark_batch_throughput(client: BenchmarkClient, model: str = None, model_name: str = None, batch_sizes: List[int] = None) -> Dict[str, Any]:
     """Benchmark batch processing throughput"""
     model_info = f" [{model_name}]" if model_name else ""
     console.print(f"\n[bold cyan]📊 Batch Processing Throughput Test{model_info}[/bold cyan]")
     
-    batch_sizes = [1, 5, 10, 20, 32]
+    if batch_sizes is None:
+        batch_sizes = [1, 5, 10, 20, 32, 64, 128, 256]
+    
+    console.print(f"[dim]Testing batch sizes: {batch_sizes}[/dim]")
     results = {}
     
     with Progress(
@@ -185,6 +188,10 @@ def benchmark_batch_throughput(client: BenchmarkClient, model: str = None, model
             texts = MEDIUM_TEXTS * (batch_size // len(MEDIUM_TEXTS) + 1)
             texts = texts[:batch_size]
             
+            # Calculate approximate tokens (1 token per 4 characters is typical for English)
+            total_chars = sum(len(text) for text in texts)
+            estimated_tokens = total_chars // 4
+            
             latencies = []
             for _ in range(10):  # 10 iterations per batch size
                 try:
@@ -195,12 +202,16 @@ def benchmark_batch_throughput(client: BenchmarkClient, model: str = None, model
             
             if latencies:
                 avg_latency = statistics.mean(latencies)
-                throughput = (batch_size / avg_latency) * 1000  # texts per second
+                texts_per_sec = (batch_size / avg_latency) * 1000  # texts per second
+                tokens_per_sec = (estimated_tokens / avg_latency) * 1000  # tokens per second
                 
                 results[batch_size] = {
                     "latency_ms": avg_latency,
-                    "throughput_per_sec": throughput,
-                    "ms_per_text": avg_latency / batch_size
+                    "throughput_per_sec": texts_per_sec,  # Keep for compatibility
+                    "texts_per_sec": texts_per_sec,
+                    "tokens_per_sec": tokens_per_sec,
+                    "ms_per_text": avg_latency / batch_size,
+                    "total_tokens": estimated_tokens
                 }
             
             progress.update(task, advance=1)
@@ -211,6 +222,7 @@ def benchmark_concurrent_requests(client: BenchmarkClient, num_workers: int = 10
     """Benchmark concurrent request handling"""
     model_info = f" [{model_name}]" if model_name else ""
     console.print(f"\n[bold cyan]📊 Concurrent Request Test{model_info}[/bold cyan]")
+    console.print(f"[dim]Testing with {num_workers} concurrent workers[/dim]")
     
     def make_request(text: str) -> float:
         """Make a single request"""
@@ -306,21 +318,21 @@ def print_model_comparison(all_results: Dict[str, Dict[str, Any]]):
     table.add_column("Short Text (ms)", justify="right")
     table.add_column("Medium Text (ms)", justify="right")
     table.add_column("Long Text (ms)", justify="right")
-    table.add_column("Batch-32 (texts/sec)", justify="right")
+    table.add_column("Batch-32 (tok/sec)", justify="right")
     
     for model_alias, results in all_results.items():
         model_info = MODELS[model_alias]
         short_ms = results.get("single_latency", {}).get("short", {}).get("mean", 0)
         medium_ms = results.get("single_latency", {}).get("medium", {}).get("mean", 0)
         long_ms = results.get("single_latency", {}).get("long", {}).get("mean", 0)
-        throughput = results.get("batch_throughput", {}).get(32, {}).get("throughput_per_sec", 0)
+        tokens_per_sec = results.get("batch_throughput", {}).get(32, {}).get("tokens_per_sec", 0)
         
         table.add_row(
             f"{model_info['name']} ({model_info['dim']}d)",
             f"{short_ms:.2f}" if short_ms else "-",
             f"{medium_ms:.2f}" if medium_ms else "-",
             f"{long_ms:.2f}" if long_ms else "-",
-            f"{throughput:.1f}" if throughput else "-"
+            f"{tokens_per_sec:.0f}" if tokens_per_sec else "-"
         )
     
     console.print(table)
@@ -366,14 +378,18 @@ def print_results(results: Dict[str, Any], model_name: str = None):
         table.add_column("Batch Size", style="cyan", justify="center")
         table.add_column("Latency (ms)", justify="right")
         table.add_column("ms/text", justify="right")
-        table.add_column("Throughput (texts/sec)", justify="right")
+        table.add_column("Texts/sec", justify="right")
+        table.add_column("Tokens/sec", justify="right")
         
         for batch_size, stats in sorted(results["batch_throughput"].items()):
+            texts_per_sec = stats.get('texts_per_sec', stats.get('throughput_per_sec', 0))
+            tokens_per_sec = stats.get('tokens_per_sec', texts_per_sec * 30)  # Estimate if not available
             table.add_row(
                 str(batch_size),
                 f"{stats['latency_ms']:.2f}",
                 f"{stats['ms_per_text']:.2f}",
-                f"{stats['throughput_per_sec']:.1f}"
+                f"{texts_per_sec:.1f}",
+                f"{tokens_per_sec:.0f}"
             )
         
         console.print(table)
@@ -418,6 +434,8 @@ def main():
     parser.add_argument("--model", choices=["small", "medium", "large", "all"], default="all",
                         help="Which model(s) to benchmark")
     parser.add_argument("--skip-concurrent", action="store_true", help="Skip concurrent test")
+    parser.add_argument("--stress", action="store_true", help="Run stress test with larger batches (up to 512)")
+    parser.add_argument("--extreme", action="store_true", help="EXTREME stress test (up to 1024 batch, 50 workers)")
     args = parser.parse_args()
     
     console.print("[bold cyan]🚀 Qwen3 Embedding Server Benchmark[/bold cyan]")
@@ -448,6 +466,19 @@ def main():
     else:
         models_to_test = [args.model]
     
+    # Determine batch sizes based on stress mode
+    if args.extreme:
+        batch_sizes = [1, 10, 32, 64, 128, 256, 512, 1024]
+        console.print("[bold red]🔥 EXTREME STRESS MODE ACTIVATED! 🔥[/bold red]")
+        console.print("[yellow]Warning: This will use significant resources![/yellow]")
+        if not args.quick:
+            args.workers = 50  # More concurrent workers
+    elif args.stress:
+        batch_sizes = [1, 10, 32, 64, 128, 256, 512]
+        console.print("[bold yellow]⚡ Stress mode activated![/bold yellow]")
+    else:
+        batch_sizes = None  # Use defaults
+    
     all_results = {}
     
     try:
@@ -465,7 +496,7 @@ def main():
                     client, iterations=20, model=model_alias, model_name=model_info['name']
                 )
                 results["batch_throughput"] = benchmark_batch_throughput(
-                    client, model=model_alias, model_name=model_info['name']
+                    client, model=model_alias, model_name=model_info['name'], batch_sizes=batch_sizes
                 )
             else:
                 # Full benchmark
@@ -473,7 +504,7 @@ def main():
                     client, iterations=args.iterations, model=model_alias, model_name=model_info['name']
                 )
                 results["batch_throughput"] = benchmark_batch_throughput(
-                    client, model=model_alias, model_name=model_info['name']
+                    client, model=model_alias, model_name=model_info['name'], batch_sizes=batch_sizes
                 )
                 
                 if not args.skip_concurrent:
@@ -525,8 +556,8 @@ def main():
                 console.print(f"  Average latency: {avg_latency:.2f}ms ({1000/avg_latency:.1f} req/sec)")
             
             if "batch_throughput" in results and 32 in results["batch_throughput"]:
-                throughput = results["batch_throughput"][32]["throughput_per_sec"]
-                console.print(f"  Batch throughput: {throughput:.1f} texts/sec")
+                tokens_per_sec = results["batch_throughput"][32].get("tokens_per_sec", 0)
+                console.print(f"  Batch throughput: {tokens_per_sec:.0f} tokens/sec")
             
             if "cache" in results:
                 speedup = results["cache"]["cache_speedup"]
