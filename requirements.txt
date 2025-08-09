@@ -1,0 +1,9 @@
+mlx-lm>=0.26.3
+fastapi>=0.116.1
+uvicorn[standard]>=0.35.0
+pydantic>=2.11.7
+numpy>=2.3.2
+psutil>=7.0.0
+
+# Optional - for benchmarking
+rich>=13.0.0
