@@ -2,6 +2,8 @@
 
 **Lightning-fast text embeddings on your Mac.** No cloud, no GPU needed – just Apple Silicon magic. 🚀
 
+Works great on all Apple Silicon Macs including the latest M4 chips!
+
 ![Performance](https://img.shields.io/badge/Speed-44K_tokens/sec-green)
 ![Models](https://img.shields.io/badge/Models-0.6B_|_4B_|_8B-blue)
 ![Platform](https://img.shields.io/badge/Platform-Apple_Silicon-black)
@@ -9,8 +11,9 @@
 ## ✨ What is this?
 
 A simple, fast API server that runs state-of-the-art text embedding models locally on your Mac. Perfect for:
+
 - 🔍 Semantic search
-- 🤖 RAG applications  
+- 🤖 RAG applications
 - 📊 Document clustering
 - 🎯 Similarity matching
 
@@ -19,7 +22,8 @@ A simple, fast API server that runs state-of-the-art text embedding models local
 ## 🏃 Quick Start (2 minutes)
 
 ### Requirements
-- Apple Silicon Mac (M1/M2/M3)
+
+- Apple Silicon Mac (M1/M2/M3/M4)
 - Python 3.9+
 - 1-5GB free space (depending on model)
 
@@ -54,11 +58,11 @@ curl -X POST http://localhost:8000/embed \
 
 Three models available, from fast to powerful:
 
-| Model | Speed | Quality | Memory | Use When |
-|-------|-------|---------|--------|----------|
-| **Small** (default) | ⚡⚡⚡ 44K tok/s | ⭐⭐ | 900MB | Speed matters most |
-| **Medium** | ⚡⚡ 18K tok/s | ⭐⭐⭐ | 2.5GB | **Best balance** ✨ |
-| **Large** | ⚡ 11K tok/s | ⭐⭐⭐⭐ | 4.5GB | Quality matters most |
+| Model               | Speed            | Quality  | Memory | Use When             |
+| ------------------- | ---------------- | -------- | ------ | -------------------- |
+| **Small** (default) | ⚡⚡⚡ 44K tok/s | ⭐⭐     | 900MB  | Speed matters most   |
+| **Medium**          | ⚡⚡ 18K tok/s   | ⭐⭐⭐   | 2.5GB  | **Best balance** ✨  |
+| **Large**           | ⚡ 11K tok/s     | ⭐⭐⭐⭐ | 4.5GB  | Quality matters most |
 
 Use different models per request:
 
@@ -67,10 +71,10 @@ Use different models per request:
 import requests
 
 # Fast model for high-volume
-requests.post("http://localhost:8000/embed", 
+requests.post("http://localhost:8000/embed",
     json={"text": "Quick search", "model": "small"})
 
-# Quality model for important documents  
+# Quality model for important documents
 requests.post("http://localhost:8000/embed",
     json={"text": "Important document", "model": "large"})
 ```
@@ -82,6 +86,7 @@ requests.post("http://localhost:8000/embed",
 ### Core Endpoints
 
 #### Generate Single Embedding
+
 ```bash
 POST /embed
 {
@@ -91,6 +96,7 @@ POST /embed
 ```
 
 #### Generate Multiple Embeddings
+
 ```bash
 POST /embed_batch
 {
@@ -100,11 +106,13 @@ POST /embed_batch
 ```
 
 #### List Available Models
+
 ```bash
 GET /models
 ```
 
 #### Health Check
+
 ```bash
 GET /health
 ```
@@ -112,6 +120,7 @@ GET /health
 ## 💻 Client Examples
 
 ### Python
+
 ```python
 import requests
 import numpy as np
@@ -129,6 +138,7 @@ print(f"Shape: {embedding.shape}")  # (2560,) for medium model
 ```
 
 ### JavaScript
+
 ```javascript
 async function getEmbedding(text, model = "medium") {
   const response = await fetch("http://localhost:8000/embed", {
@@ -146,6 +156,7 @@ console.log(`Dimensions: ${embedding.length}`);
 ```
 
 ### Semantic Search Example
+
 ```python
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -228,26 +239,29 @@ Or use the included systemd service file for Linux servers.
 
 ## 📊 Performance
 
-Real-world performance on M2 Pro:
+Real-world benchmarks from a 16" MacBook Pro (2023) with M2 Max chip and 32GB RAM:
 
-| Operation | Performance | 
-|-----------|-------------|
-| Single embedding | 1-3ms |
-| Batch (32 texts) | 44,000 tokens/sec |
-| Concurrent requests | 200+ req/sec |
-| Cache speedup | 13x faster |
+| Operation           | Performance       |
+| ------------------- | ----------------- |
+| Single embedding    | 1-3ms             |
+| Batch (32 texts)    | 44,000 tokens/sec |
+| Concurrent requests | 200+ req/sec      |
+| Cache speedup       | 13x faster        |
 
 The medium model offers the best quality/speed balance with 0.65 semantic coherence score.
+
+*Performance scales with Apple Silicon generation - expect even better results on M3/M4 chips!*
 
 ## 🎯 Use Cases
 
 ### RAG (Retrieval Augmented Generation)
+
 ```python
 # 1. Embed your documents
 embeddings = embed_batch(documents)
 store_in_vector_db(embeddings)
 
-# 2. Embed user query  
+# 2. Embed user query
 query_embedding = embed(user_question)
 
 # 3. Find relevant docs
@@ -258,6 +272,7 @@ llm_response = llm.generate(user_question, context=relevant_docs)
 ```
 
 ### Semantic Deduplication
+
 ```python
 # Find duplicate content
 embeddings = embed_batch(articles)
@@ -266,6 +281,7 @@ duplicates = np.where(similarity_matrix > 0.95)
 ```
 
 ### Content Recommendation
+
 ```python
 # Find similar items
 user_liked_embedding = embed(user_liked_item)
@@ -276,17 +292,17 @@ recommendations = all_items[similarities.argsort()[-10:]]
 
 ## 🐛 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| "Out of memory" | Use smaller model or reduce batch size |
+| Issue                   | Solution                                        |
+| ----------------------- | ----------------------------------------------- |
+| "Out of memory"         | Use smaller model or reduce batch size          |
 | "Slow on first request" | Normal - model warming up. Keep server running. |
-| "Can't connect" | Check firewall, ensure port 8000 is free |
-| "Module not found" | Run `pip install -r requirements.txt` again |
+| "Can't connect"         | Check firewall, ensure port 8000 is free        |
+| "Module not found"      | Run `pip install -r requirements.txt` again     |
 
 ## 🚀 Why Use This?
 
 - **Privacy**: Your data never leaves your machine
-- **Speed**: Faster than cloud APIs (no network latency)  
+- **Speed**: Faster than cloud APIs (no network latency)
 - **Cost**: Free after initial setup (no API fees)
 - **Reliability**: No internet required, no rate limits
 - **Quality**: State-of-the-art Qwen3 models with 4-bit quantization
@@ -311,7 +327,7 @@ Contributions welcome! This is a simple, focused project:
 
 1. Fork the repo
 2. Create your feature branch
-3. Make your changes  
+3. Make your changes
 4. Run tests: `make test`
 5. Submit a PR
 
@@ -322,6 +338,7 @@ MIT License - use it however you want!
 ## 🙏 Credits
 
 Built with:
+
 - [MLX](https://github.com/ml-explore/mlx) - Apple's ML framework
 - [Qwen](https://github.com/QwenLM/Qwen) - The embedding models
 - [FastAPI](https://fastapi.tiangolo.com/) - The web framework
