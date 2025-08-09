@@ -1,0 +1,13 @@
+{
+  "embeddings": [
+    {
+      "tensorName": "Qwen3 large Embeddings",
+      "tensorShape": [
+        69,
+        4096
+      ],
+      "tensorPath": "vectors_large.tsv",
+      "metadataPath": "metadata_large.tsv"
+    }
+  ]
+}

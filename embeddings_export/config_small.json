@@ -1,0 +1,13 @@
+{
+  "embeddings": [
+    {
+      "tensorName": "Qwen3 small Embeddings",
+      "tensorShape": [
+        69,
+        1024
+      ],
+      "tensorPath": "vectors_small.tsv",
+      "metadataPath": "metadata_small.tsv"
+    }
+  ]
+}

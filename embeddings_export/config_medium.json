@@ -1,0 +1,13 @@
+{
+  "embeddings": [
+    {
+      "tensorName": "Qwen3 medium Embeddings",
+      "tensorShape": [
+        69,
+        2560
+      ],
+      "tensorPath": "vectors_medium.tsv",
+      "metadataPath": "metadata_medium.tsv"
+    }
+  ]
+}

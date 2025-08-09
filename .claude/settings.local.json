@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(pip index versions:*)"
+      "Bash(pip index versions:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

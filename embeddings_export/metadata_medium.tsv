@@ -1,0 +1,70 @@
+Label	Category	Text
+technology_1	technology	Machine learning algorithms revolutionize data analysis
+technology_2	technology	Artificial intelligence transforms modern computing
+technology_3	technology	Neural networks mimic human brain processing
+technology_4	technology	Deep learning enables complex pattern recognition
+technology_5	technology	Quantum computing promises exponential speedup
+technology_6	technology	Cloud infrastructure scales enterprise applications
+technology_7	technology	Edge computing brings processing closer to data
+technology_8	technology	Blockchain technology ensures data immutability
+nature_1	nature	Majestic mountains pierce the morning clouds
+nature_2	nature	Ocean waves crash against rocky coastlines
+nature_3	nature	Ancient forests harbor diverse ecosystems
+nature_4	nature	Desert landscapes showcase nature's resilience
+nature_5	nature	Coral reefs teem with vibrant marine life
+nature_6	nature	Arctic tundra endures extreme conditions
+nature_7	nature	Rainforests produce Earth's vital oxygen
+nature_8	nature	Rivers carve valleys through solid rock
+emotions_1	emotions	Joy spreads through genuine human connections
+emotions_2	emotions	Sadness teaches us about loss and growth
+emotions_3	emotions	Anger signals boundaries need protection
+emotions_4	emotions	Fear keeps us safe from potential danger
+emotions_5	emotions	Love binds families and communities together
+emotions_6	emotions	Hope sustains us through difficult times
+emotions_7	emotions	Gratitude enhances mental wellbeing significantly
+emotions_8	emotions	Empathy bridges cultural and social divides
+science_1	science	Gravity warps spacetime around massive objects
+science_2	science	Evolution shapes life through natural selection
+science_3	science	Atoms form the building blocks of matter
+science_4	science	DNA encodes genetic information in sequences
+science_5	science	Photosynthesis converts sunlight into energy
+science_6	science	Chemical reactions transform molecular structures
+science_7	science	Physics governs fundamental universal laws
+science_8	science	Biology explores living organism complexity
+food_1	food	Fresh pasta absorbs rich tomato sauce perfectly
+food_2	food	Sushi combines fresh fish with seasoned rice
+food_3	food	Chocolate melts smoothly on the tongue
+food_4	food	Coffee aroma fills morning kitchens worldwide
+food_5	food	Bread rises through yeast fermentation process
+food_6	food	Spices transform simple ingredients dramatically
+food_7	food	Wine complexity develops through careful aging
+food_8	food	Cheese varieties reflect regional traditions
+sports_1	sports	Athletes push physical limits in competition
+sports_2	sports	Basketball requires teamwork and individual skill
+sports_3	sports	Marathon runners demonstrate incredible endurance
+sports_4	sports	Soccer unites fans across global cultures
+sports_5	sports	Tennis matches showcase strategic mental games
+sports_6	sports	Swimming builds full-body strength and stamina
+sports_7	sports	Gymnastics combines grace with raw power
+sports_8	sports	Baseball strategy unfolds over nine innings
+art_1	art	Paintings capture moments frozen in time
+art_2	art	Sculpture transforms raw materials into meaning
+art_3	art	Music evokes powerful emotional responses
+art_4	art	Poetry distills language to its essence
+art_5	art	Dance expresses stories through movement
+art_6	art	Photography documents reality and imagination
+art_7	art	Theater brings written words to life
+art_8	art	Architecture shapes how we inhabit spaces
+travel_1	travel	Exploring new cultures broadens perspectives immensely
+travel_2	travel	Mountain trails reward hikers with stunning vistas
+travel_3	travel	City streets pulse with urban energy
+travel_4	travel	Beach sunsets create unforgettable memories
+travel_5	travel	Ancient ruins tell stories of past civilizations
+travel_6	travel	Local cuisine reveals cultural heritage deeply
+travel_7	travel	Train journeys offer scenic countryside views
+travel_8	travel	Backpacking adventures foster personal growth
+outlier_1	outlier	xyzabc random gibberish text qwerty
+outlier_2	outlier	The quick brown fox jumps over the lazy dog
+outlier_3	outlier	Lorem ipsum dolor sit amet consectetur
+outlier_4	outlier	1234567890 numeric sequence test pattern
+outlier_5	outlier	!@#$%^&* special characters punctuation marks
