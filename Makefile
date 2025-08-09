@@ -20,6 +20,7 @@ help:
 	@echo "  make benchmark-large  Quick benchmark (8B model)"
 	@echo "  make benchmark-stress Stress test with large batches (up to 512)"
 	@echo "  make benchmark-extreme EXTREME stress test (batches up to 1024!)"
+	@echo "  make visualize        Generate embeddings for TensorFlow Projector"
 	@echo ""
 
 # Install production dependencies
@@ -128,3 +129,17 @@ docker-build:
 # Docker run (experimental)
 docker-run:
 	docker run -p 8000:8000 qwen3-embeddings
+
+# Generate embeddings for visualization
+visualize:
+	@echo "🎯 Generating embeddings for visualization..."
+	python examples/visualize_embeddings.py --models small medium large
+
+visualize-small:
+	python examples/visualize_embeddings.py --models small
+
+visualize-medium:
+	python examples/visualize_embeddings.py --models medium
+
+visualize-large:
+	python examples/visualize_embeddings.py --models large

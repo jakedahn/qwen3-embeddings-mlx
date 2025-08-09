@@ -39,6 +39,13 @@ tests/benchmarks/*.json
 tests/benchmarks/*.txt
 tests/benchmarks/*.csv
 
+# Benchmark results
+tests/benchmarks/
+
+# Embeddings output
+embeddings_export/
+*.tsv
+
 # MLX Model Cache
 ~/.cache/huggingface/
 mlx_models/
