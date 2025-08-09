@@ -4,16 +4,20 @@
 help:
 	@echo "Qwen3 Embeddings Server - Available Commands:"
 	@echo ""
-	@echo "  make install      Install production dependencies"
-	@echo "  make install-dev  Install development dependencies"
-	@echo "  make run          Run the server"
-	@echo "  make dev          Run in development mode with auto-reload"
-	@echo "  make test         Run test suite"
-	@echo "  make lint         Run code linting"
-	@echo "  make format       Format code with black"
-	@echo "  make clean        Remove cache and temporary files"
-	@echo "  make health       Check server health"
-	@echo "  make benchmark    Run performance benchmarks"
+	@echo "  make install          Install production dependencies"
+	@echo "  make install-dev      Install development dependencies"
+	@echo "  make run              Run the server"
+	@echo "  make dev              Run in development mode with auto-reload"
+	@echo "  make test             Run test suite"
+	@echo "  make lint             Run code linting"
+	@echo "  make format           Format code with black"
+	@echo "  make clean            Remove cache and temporary files"
+	@echo "  make health           Check server health"
+	@echo "  make benchmark        Run quick benchmark (all models)"
+	@echo "  make benchmark-full   Run comprehensive benchmark (all models)"
+	@echo "  make benchmark-small  Quick benchmark (0.6B model)"
+	@echo "  make benchmark-medium Quick benchmark (4B model)"
+	@echo "  make benchmark-large  Quick benchmark (8B model)"
 	@echo ""
 
 # Install production dependencies
@@ -86,13 +90,23 @@ benchmark:
 			print(f'Batch (10): {(time.time()-start)*1000:.2f}ms')"; \
 	fi || echo "Server not running"
 
-# Run full benchmark
+# Run full benchmark on all models
 benchmark-full:
 	@if [ -f tests/benchmark.py ]; then \
-		python tests/benchmark.py --iterations 100 --workers 10; \
+		python tests/benchmark.py --iterations 100 --workers 10 --model all; \
 	else \
 		echo "benchmark.py not found"; \
 	fi
+
+# Benchmark specific model
+benchmark-small:
+	python tests/benchmark.py --quick --model small
+
+benchmark-medium:
+	python tests/benchmark.py --quick --model medium
+
+benchmark-large:
+	python tests/benchmark.py --quick --model large
 
 # Docker build (experimental)
 docker-build:

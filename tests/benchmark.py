@@ -25,7 +25,13 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRe
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-EMBEDDING_DIM = 1024
+
+# Model configurations
+MODELS = {
+    "small": {"alias": "small", "name": "0.6B", "dim": 1024, "color": "green"},
+    "medium": {"alias": "medium", "name": "4B", "dim": 2560, "color": "yellow"},
+    "large": {"alias": "large", "name": "8B", "dim": 4096, "color": "red"}
+}
 
 # Test data
 SHORT_TEXTS = [
@@ -69,12 +75,15 @@ class BenchmarkClient:
         except:
             return False
     
-    def single_embed(self, text: str) -> float:
+    def single_embed(self, text: str, model: str = None) -> float:
         """Measure single embedding time"""
         start = time.perf_counter()
+        payload = {"text": text}
+        if model:
+            payload["model"] = model
         response = self.session.post(
             f"{self.base_url}/embed",
-            json={"text": text}
+            json=payload
         )
         latency = (time.perf_counter() - start) * 1000
         
@@ -83,12 +92,15 @@ class BenchmarkClient:
         
         return latency
     
-    def batch_embed(self, texts: List[str]) -> float:
+    def batch_embed(self, texts: List[str], model: str = None) -> float:
         """Measure batch embedding time"""
         start = time.perf_counter()
+        payload = {"texts": texts}
+        if model:
+            payload["model"] = model
         response = self.session.post(
             f"{self.base_url}/embed_batch",
-            json={"texts": texts}
+            json=payload
         )
         latency = (time.perf_counter() - start) * 1000
         
@@ -96,10 +108,21 @@ class BenchmarkClient:
             raise Exception(f"Request failed: {response.status_code}")
         
         return latency
+    
+    def get_models_status(self) -> Dict[str, Any]:
+        """Get status of all models"""
+        try:
+            response = self.session.get(f"{self.base_url}/models", timeout=2)
+            if response.status_code == 200:
+                return response.json()
+        except:
+            pass
+        return {}
 
-def benchmark_single_latency(client: BenchmarkClient, iterations: int = 100) -> Dict[str, Any]:
+def benchmark_single_latency(client: BenchmarkClient, iterations: int = 100, model: str = None, model_name: str = None) -> Dict[str, Any]:
     """Benchmark single embedding latency"""
-    console.print("\n[bold cyan]📊 Single Embedding Latency Test[/bold cyan]")
+    model_info = f" [{model_name}]" if model_name else ""
+    console.print(f"\n[bold cyan]📊 Single Embedding Latency Test{model_info}[/bold cyan]")
     
     results = {"short": [], "medium": [], "long": []}
     
@@ -119,7 +142,7 @@ def benchmark_single_latency(client: BenchmarkClient, iterations: int = 100) -> 
             for i in range(iterations):
                 text = texts[i % len(texts)]
                 try:
-                    latency = client.single_embed(text)
+                    latency = client.single_embed(text, model=model)
                     results[text_type].append(latency)
                 except Exception as e:
                     console.print(f"[red]Error: {e}[/red]")
@@ -142,9 +165,10 @@ def benchmark_single_latency(client: BenchmarkClient, iterations: int = 100) -> 
     
     return stats
 
-def benchmark_batch_throughput(client: BenchmarkClient) -> Dict[str, Any]:
+def benchmark_batch_throughput(client: BenchmarkClient, model: str = None, model_name: str = None) -> Dict[str, Any]:
     """Benchmark batch processing throughput"""
-    console.print("\n[bold cyan]📊 Batch Processing Throughput Test[/bold cyan]")
+    model_info = f" [{model_name}]" if model_name else ""
+    console.print(f"\n[bold cyan]📊 Batch Processing Throughput Test{model_info}[/bold cyan]")
     
     batch_sizes = [1, 5, 10, 20, 32]
     results = {}
@@ -164,7 +188,7 @@ def benchmark_batch_throughput(client: BenchmarkClient) -> Dict[str, Any]:
             latencies = []
             for _ in range(10):  # 10 iterations per batch size
                 try:
-                    latency = client.batch_embed(texts)
+                    latency = client.batch_embed(texts, model=model)
                     latencies.append(latency)
                 except Exception as e:
                     console.print(f"[red]Error with batch size {batch_size}: {e}[/red]")
@@ -183,16 +207,20 @@ def benchmark_batch_throughput(client: BenchmarkClient) -> Dict[str, Any]:
     
     return results
 
-def benchmark_concurrent_requests(client: BenchmarkClient, num_workers: int = 10) -> Dict[str, Any]:
+def benchmark_concurrent_requests(client: BenchmarkClient, num_workers: int = 10, model: str = None, model_name: str = None) -> Dict[str, Any]:
     """Benchmark concurrent request handling"""
-    console.print("\n[bold cyan]📊 Concurrent Request Test[/bold cyan]")
+    model_info = f" [{model_name}]" if model_name else ""
+    console.print(f"\n[bold cyan]📊 Concurrent Request Test{model_info}[/bold cyan]")
     
     def make_request(text: str) -> float:
         """Make a single request"""
         start = time.perf_counter()
+        payload = {"text": text}
+        if model:
+            payload["model"] = model
         response = requests.post(
             f"{BASE_URL}/embed",
-            json={"text": text}
+            json=payload
         )
         latency = (time.perf_counter() - start) * 1000
         return latency if response.status_code == 200 else None
@@ -231,9 +259,10 @@ def benchmark_concurrent_requests(client: BenchmarkClient, num_workers: int = 10
     
     return {}
 
-def benchmark_cache_effectiveness(client: BenchmarkClient) -> Dict[str, Any]:
+def benchmark_cache_effectiveness(client: BenchmarkClient, model: str = None, model_name: str = None) -> Dict[str, Any]:
     """Test cache effectiveness with repeated queries"""
-    console.print("\n[bold cyan]📊 Cache Effectiveness Test[/bold cyan]")
+    model_info = f" [{model_name}]" if model_name else ""
+    console.print(f"\n[bold cyan]📊 Cache Effectiveness Test{model_info}[/bold cyan]")
     
     test_text = "This is a test text for cache benchmarking"
     results = {"first_calls": [], "cached_calls": []}
@@ -248,14 +277,14 @@ def benchmark_cache_effectiveness(client: BenchmarkClient) -> Dict[str, Any]:
         # First calls (cold cache)
         for i in range(20):
             text = f"{test_text} variation {i}"
-            latency = client.single_embed(text)
+            latency = client.single_embed(text, model=model)
             results["first_calls"].append(latency)
             progress.update(task, advance=1)
         
         # Repeated calls (should hit cache)
         for i in range(20):
             text = f"{test_text} variation {i}"
-            latency = client.single_embed(text)
+            latency = client.single_embed(text, model=model)
             results["cached_calls"].append(latency)
             progress.update(task, advance=1)
     
@@ -266,8 +295,48 @@ def benchmark_cache_effectiveness(client: BenchmarkClient) -> Dict[str, Any]:
         "cache_time_saved_ms": statistics.mean(results["first_calls"]) - statistics.mean(results["cached_calls"])
     }
 
-def print_results(results: Dict[str, Any]):
+def print_model_comparison(all_results: Dict[str, Dict[str, Any]]):
+    """Print comparison across all models"""
+    console.print("\n[bold magenta]🎯 Model Comparison Summary[/bold magenta]")
+    console.print("=" * 70)
+    
+    # Latency comparison
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Model", style="yellow")
+    table.add_column("Short Text (ms)", justify="right")
+    table.add_column("Medium Text (ms)", justify="right")
+    table.add_column("Long Text (ms)", justify="right")
+    table.add_column("Batch-32 (texts/sec)", justify="right")
+    
+    for model_alias, results in all_results.items():
+        model_info = MODELS[model_alias]
+        short_ms = results.get("single_latency", {}).get("short", {}).get("mean", 0)
+        medium_ms = results.get("single_latency", {}).get("medium", {}).get("mean", 0)
+        long_ms = results.get("single_latency", {}).get("long", {}).get("mean", 0)
+        throughput = results.get("batch_throughput", {}).get(32, {}).get("throughput_per_sec", 0)
+        
+        table.add_row(
+            f"{model_info['name']} ({model_info['dim']}d)",
+            f"{short_ms:.2f}" if short_ms else "-",
+            f"{medium_ms:.2f}" if medium_ms else "-",
+            f"{long_ms:.2f}" if long_ms else "-",
+            f"{throughput:.1f}" if throughput else "-"
+        )
+    
+    console.print(table)
+    
+    # Speed vs Quality tradeoff
+    console.print("\n[bold cyan]💡 Recommendations:[/bold cyan]")
+    console.print("• [green]Small (0.6B)[/green]: Best for high-volume, latency-sensitive applications")
+    console.print("• [yellow]Medium (4B)[/yellow]: Balanced choice for most use cases")
+    console.print("• [red]Large (8B)[/red]: Best quality for semantic search and similarity tasks")
+
+def print_results(results: Dict[str, Any], model_name: str = None):
     """Print benchmark results in a nice table format"""
+    
+    if model_name:
+        console.print(f"\n[bold blue]📊 Results for {model_name} Model[/bold blue]")
+        console.print("=" * 50)
     
     # Single latency results
     if "single_latency" in results:
@@ -346,6 +415,9 @@ def main():
     parser.add_argument("--workers", type=int, default=10, help="Concurrent workers")
     parser.add_argument("--skip-cache", action="store_true", help="Skip cache test")
     parser.add_argument("--quick", action="store_true", help="Run quick benchmark")
+    parser.add_argument("--model", choices=["small", "medium", "large", "all"], default="all",
+                        help="Which model(s) to benchmark")
+    parser.add_argument("--skip-concurrent", action="store_true", help="Skip concurrent test")
     args = parser.parse_args()
     
     console.print("[bold cyan]🚀 Qwen3 Embedding Server Benchmark[/bold cyan]")
@@ -361,25 +433,68 @@ def main():
     
     console.print("[green]✓ Server is running[/green]")
     
-    results = {}
+    # Check available models
+    models_status = client.get_models_status()
+    if models_status:
+        console.print("\n[cyan]Available models:[/cyan]")
+        for model_name, info in models_status.get("models", {}).items():
+            status_color = "green" if info["status"] == "ready" else "yellow"
+            console.print(f"  • {info['description']}: [{status_color}]{info['status']}[/{status_color}]")
+    
+    # Determine which models to test
+    models_to_test = []
+    if args.model == "all":
+        models_to_test = list(MODELS.keys())
+    else:
+        models_to_test = [args.model]
+    
+    all_results = {}
     
     try:
-        # Run benchmarks
-        if args.quick:
-            # Quick benchmark - fewer iterations
-            results["single_latency"] = benchmark_single_latency(client, iterations=20)
-            results["batch_throughput"] = benchmark_batch_throughput(client)
-        else:
-            # Full benchmark
-            results["single_latency"] = benchmark_single_latency(client, iterations=args.iterations)
-            results["batch_throughput"] = benchmark_batch_throughput(client)
-            results["concurrent"] = benchmark_concurrent_requests(client, num_workers=args.workers)
+        for model_alias in models_to_test:
+            model_info = MODELS[model_alias]
+            console.print(f"\n[bold {model_info['color']}]🚀 Testing {model_info['name']} Model ({model_info['dim']}d embeddings)[/bold {model_info['color']}]")
+            console.print("=" * 60)
             
-            if not args.skip_cache:
-                results["cache"] = benchmark_cache_effectiveness(client)
+            results = {}
+            
+            # Run benchmarks for this model
+            if args.quick:
+                # Quick benchmark - fewer iterations
+                results["single_latency"] = benchmark_single_latency(
+                    client, iterations=20, model=model_alias, model_name=model_info['name']
+                )
+                results["batch_throughput"] = benchmark_batch_throughput(
+                    client, model=model_alias, model_name=model_info['name']
+                )
+            else:
+                # Full benchmark
+                results["single_latency"] = benchmark_single_latency(
+                    client, iterations=args.iterations, model=model_alias, model_name=model_info['name']
+                )
+                results["batch_throughput"] = benchmark_batch_throughput(
+                    client, model=model_alias, model_name=model_info['name']
+                )
+                
+                if not args.skip_concurrent:
+                    results["concurrent"] = benchmark_concurrent_requests(
+                        client, num_workers=args.workers, model=model_alias, model_name=model_info['name']
+                    )
+                
+                if not args.skip_cache:
+                    results["cache"] = benchmark_cache_effectiveness(
+                        client, model=model_alias, model_name=model_info['name']
+                    )
+            
+            # Store results for this model
+            all_results[model_alias] = results
+            
+            # Print results for this model
+            print_results(results, model_name=model_info['name'])
         
-        # Print results
-        print_results(results)
+        # Print comparison if testing multiple models
+        if len(models_to_test) > 1:
+            print_model_comparison(all_results)
         
         # Save results to file
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -389,28 +504,33 @@ def main():
         benchmarks_dir = os.path.join(os.path.dirname(__file__), "benchmarks")
         os.makedirs(benchmarks_dir, exist_ok=True)
         
-        filename = os.path.join(benchmarks_dir, f"benchmark_results_{timestamp}.json")
+        # Save with model info in filename
+        model_suffix = "all" if len(models_to_test) > 1 else models_to_test[0]
+        filename = os.path.join(benchmarks_dir, f"benchmark_{model_suffix}_{timestamp}.json")
         with open(filename, "w") as f:
-            json.dump(results, f, indent=2)
+            json.dump(all_results, f, indent=2)
         
         console.print(f"\n[green]✓ Results saved to {os.path.relpath(filename)}[/green]")
         
-        # Print summary
-        console.print("\n[bold cyan]📊 Summary[/bold cyan]")
+        # Print overall summary
+        console.print("\n[bold cyan]📊 Overall Summary[/bold cyan]")
         console.print("=" * 50)
         
-        if "single_latency" in results and "medium" in results["single_latency"]:
-            avg_latency = results["single_latency"]["medium"]["mean"]
-            console.print(f"Average latency (medium text): [bold green]{avg_latency:.2f}ms[/bold green]")
-            console.print(f"Requests per second (single): [bold green]{1000/avg_latency:.1f}[/bold green]")
-        
-        if "batch_throughput" in results and 32 in results["batch_throughput"]:
-            throughput = results["batch_throughput"][32]["throughput_per_sec"]
-            console.print(f"Batch throughput (32 texts): [bold green]{throughput:.1f} texts/sec[/bold green]")
-        
-        if "cache" in results:
-            speedup = results["cache"]["cache_speedup"]
-            console.print(f"Cache speedup: [bold green]{speedup:.2f}x[/bold green]")
+        for model_alias, results in all_results.items():
+            model_info = MODELS[model_alias]
+            console.print(f"\n[{model_info['color']}]{model_info['name']} Model:[/{model_info['color']}]")
+            
+            if "single_latency" in results and "medium" in results["single_latency"]:
+                avg_latency = results["single_latency"]["medium"]["mean"]
+                console.print(f"  Average latency: {avg_latency:.2f}ms ({1000/avg_latency:.1f} req/sec)")
+            
+            if "batch_throughput" in results and 32 in results["batch_throughput"]:
+                throughput = results["batch_throughput"][32]["throughput_per_sec"]
+                console.print(f"  Batch throughput: {throughput:.1f} texts/sec")
+            
+            if "cache" in results:
+                speedup = results["cache"]["cache_speedup"]
+                console.print(f"  Cache speedup: {speedup:.2f}x")
         
     except KeyboardInterrupt:
         console.print("\n[yellow]Benchmark interrupted by user[/yellow]")

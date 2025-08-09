@@ -15,8 +15,17 @@ import numpy as np
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-EMBEDDING_DIM = 1024
 TOLERANCE = 0.01  # For float comparisons
+
+# Model configurations
+MODELS = {
+    "small": {"dim": 1024, "alias": "small"},
+    "medium": {"dim": 2560, "alias": "medium"},
+    "large": {"dim": 4096, "alias": "large"}
+}
+
+# Default dimension for backward compatibility
+EMBEDDING_DIM = 1024
 
 class TestClient:
     """Test client for Qwen3 Embedding Server"""
@@ -42,17 +51,38 @@ class TestClient:
         assert "status" in data
         assert "model_status" in data
         assert "embedding_dim" in data
-        assert data["embedding_dim"] == EMBEDDING_DIM
+        # Default model should be small (1024 dim)
+        assert data["embedding_dim"] == 1024
         
         return data
     
-    def test_single_embedding(self) -> Dict[str, Any]:
+    def test_models_endpoint(self) -> Dict[str, Any]:
+        """Test models listing endpoint"""
+        response = self.session.get(f"{self.base_url}/models")
+        assert response.status_code == 200, f"Models endpoint failed: {response.status_code}"
+        
+        data = response.json()
+        assert "models" in data
+        assert "default_model" in data
+        assert "loaded_models" in data
+        
+        # Check that all expected models are listed
+        models = data["models"]
+        assert len(models) >= 3, "Should have at least 3 models available"
+        
+        return data
+    
+    def test_single_embedding(self, model: str = None) -> Dict[str, Any]:
         """Test single text embedding"""
         test_text = "Machine learning is transforming the world"
         
+        payload = {"text": test_text, "normalize": True}
+        if model:
+            payload["model"] = model
+        
         response = self.session.post(
             f"{self.base_url}/embed",
-            json={"text": test_text, "normalize": True}
+            json=payload
         )
         
         assert response.status_code == 200, f"Embedding failed: {response.text}"
@@ -63,9 +93,13 @@ class TestClient:
         assert "normalized" in data
         assert "processing_time_ms" in data
         
+        # Get expected dimension for model
+        expected_dim = MODELS.get(model, {"dim": 1024})["dim"] if model else 1024
+        
         # Validate embedding
         embedding = np.array(data["embedding"])
-        assert embedding.shape == (EMBEDDING_DIM,), f"Wrong dimension: {embedding.shape}"
+        assert embedding.shape == (expected_dim,), f"Wrong dimension: {embedding.shape} (expected {expected_dim})"
+        assert data["dim"] == expected_dim, f"Dimension mismatch in response"
         
         # Check normalization
         if data["normalized"]:
@@ -74,7 +108,7 @@ class TestClient:
         
         return data
     
-    def test_batch_embedding(self) -> Dict[str, Any]:
+    def test_batch_embedding(self, model: str = None) -> Dict[str, Any]:
         """Test batch embedding"""
         test_texts = [
             "Python is a great programming language",
@@ -82,9 +116,13 @@ class TestClient:
             "MLX is optimized for Apple Silicon"
         ]
         
+        payload = {"texts": test_texts, "normalize": True}
+        if model:
+            payload["model"] = model
+        
         response = self.session.post(
             f"{self.base_url}/embed_batch",
-            json={"texts": test_texts, "normalize": True}
+            json=payload
         )
         
         assert response.status_code == 200, f"Batch embedding failed: {response.text}"
@@ -95,9 +133,13 @@ class TestClient:
         assert "dim" in data
         assert "normalized" in data
         
+        # Get expected dimension for model
+        expected_dim = MODELS.get(model, {"dim": 1024})["dim"] if model else 1024
+        
         # Validate embeddings
         embeddings = np.array(data["embeddings"])
-        assert embeddings.shape == (len(test_texts), EMBEDDING_DIM)
+        assert embeddings.shape == (len(test_texts), expected_dim), f"Wrong shape: {embeddings.shape}"
+        assert data["dim"] == expected_dim, f"Dimension mismatch in response"
         assert data["count"] == len(test_texts)
         
         # Check normalization
@@ -203,8 +245,12 @@ def run_tests():
     # Test suite
     tests = [
         ("Health Check", client.test_health),
-        ("Single Embedding", client.test_single_embedding),
-        ("Batch Embedding", client.test_batch_embedding),
+        ("Models Endpoint", client.test_models_endpoint),
+        ("Single Embedding (default)", lambda: client.test_single_embedding()),
+        ("Single Embedding (small)", lambda: client.test_single_embedding("small")),
+        ("Single Embedding (medium)", lambda: client.test_single_embedding("medium")),
+        ("Batch Embedding (default)", lambda: client.test_batch_embedding()),
+        ("Batch Embedding (medium)", lambda: client.test_batch_embedding("medium")),
         ("Empty Text Validation", client.test_empty_text),
         ("Large Batch Handling", client.test_large_batch),
         ("Semantic Similarity", client.test_similarity),

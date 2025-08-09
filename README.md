@@ -6,6 +6,7 @@ A high-performance text embedding server using the Qwen3 model on Apple Silicon.
 
 - **🚀 Optimized for Apple Silicon**: Leverages MLX framework for Metal acceleration
 - **⚡ Fast Inference**: ~10-20ms per embedding after warmup
+- **🎯 Multiple Model Support**: Choose between 0.6B, 4B, and 8B models
 - **📦 Simple Deployment**: Single Python file, minimal dependencies
 - **🔄 Batch Processing**: Efficient batch embedding with automatic chunking
 - **💾 Smart Caching**: LRU cache for frequently requested embeddings
@@ -79,6 +80,16 @@ Once the server is running, visit:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
+### Available Models
+
+The server supports three Qwen3 embedding models:
+
+| Model | Alias | Parameters | Embedding Dim | Description |
+|-------|-------|------------|---------------|-------------|
+| Qwen3-Embedding-0.6B | `small`, `0.6b`, `default` | 0.6B | 1024 | Fast and efficient |
+| Qwen3-Embedding-4B | `medium`, `4b` | 4B | 2560 | Balanced performance |
+| Qwen3-Embedding-8B | `large`, `8b` | 8B | 4096 | Higher quality embeddings |
+
 ### Endpoints
 
 #### `POST /embed`
@@ -90,6 +101,7 @@ Generate embedding for a single text.
 ```json
 {
   "text": "Your text here",
+  "model": "medium",  // Optional: "small", "medium", "large", or full model name
   "normalize": true
 }
 ```
@@ -115,6 +127,7 @@ Generate embeddings for multiple texts.
 ```json
 {
   "texts": ["Text 1", "Text 2", "Text 3"],
+  "model": "medium",  // Optional: "small", "medium", "large", or full model name
   "normalize": true
 }
 ```
@@ -152,6 +165,10 @@ Health check endpoint for monitoring.
 #### `GET /metrics`
 
 Detailed metrics and configuration.
+
+#### `GET /models`
+
+List available models and their current status.
 
 ## 🔧 Configuration
 
@@ -191,42 +208,74 @@ class EmbeddingClient:
     def __init__(self, base_url="http://localhost:8000"):
         self.base_url = base_url
 
-    def embed(self, text: str) -> np.ndarray:
+    def embed(self, text: str, model: str = None) -> np.ndarray:
         response = requests.post(
             f"{self.base_url}/embed",
-            json={"text": text}
+            json={"text": text, "model": model}
         )
         return np.array(response.json()["embedding"])
 
-    def embed_batch(self, texts: list) -> np.ndarray:
+    def embed_batch(self, texts: list, model: str = None) -> np.ndarray:
         response = requests.post(
             f"{self.base_url}/embed_batch",
-            json={"texts": texts}
+            json={"texts": texts, "model": model}
         )
         return np.array(response.json()["embeddings"])
 
+    def list_models(self):
+        response = requests.get(f"{self.base_url}/models")
+        return response.json()
+
 # Usage
 client = EmbeddingClient()
+
+# Use default model (small)
 embedding = client.embed("Machine learning is amazing")
 print(f"Shape: {embedding.shape}")  # (1024,)
+
+# Use medium model
+embedding_medium = client.embed("Machine learning is amazing", model="medium")
+print(f"Shape: {embedding_medium.shape}")  # (2560,)
+
+# Use large model for higher quality
+embedding_large = client.embed("Machine learning is amazing", model="large")
+print(f"Shape: {embedding_large.shape}")  # (4096,)
+
+# Check available models
+models = client.list_models()
+print(f"Available models: {models['loaded_models']}")
 ```
 
 ### JavaScript/TypeScript Client
 
 ```javascript
-async function getEmbedding(text) {
+async function getEmbedding(text, model = null) {
   const response = await fetch("http://localhost:8000/embed", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, model }),
   });
   const data = await response.json();
   return data.embedding;
 }
 
+async function listModels() {
+  const response = await fetch("http://localhost:8000/models");
+  return await response.json();
+}
+
 // Usage
+// Use default model
 const embedding = await getEmbedding("Hello, world!");
 console.log(`Dimension: ${embedding.length}`); // 1024
+
+// Use medium model
+const embeddingMedium = await getEmbedding("Hello, world!", "medium");
+console.log(`Dimension: ${embeddingMedium.length}`); // 2560
+
+// Check available models
+const models = await listModels();
+console.log("Available models:", models.models);
 ```
 
 ### Semantic Search Example
@@ -380,8 +429,10 @@ On M2 Pro MacBook Pro:
 | - Speedup               | 13.6x           |                    |
 | - Cached latency        | ~1.4ms          |                    |
 | **Resource Usage**      |                 |                    |
-| - Model load time       | ~1s             |                    |
-| - Memory usage          | ~900MB          |                    |
+| - Model load time       | ~1s             | Per model          |
+| - Memory usage (0.6B)   | ~900MB          |                    |
+| - Memory usage (4B)     | ~2.5GB          |                    |
+| - Memory usage (8B)     | ~4.5GB          |                    |
 
 ### Optimization Tips
 
