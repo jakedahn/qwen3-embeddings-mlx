@@ -1,501 +1,333 @@
-# Qwen3 Embeddings Server
+# Qwen3 Embeddings Server for Mac
 
-A high-performance text embedding server using the Qwen3 model on Apple Silicon. Built with FastAPI and MLX for optimal performance on M1/M2/M3 Macs.
+**Lightning-fast text embeddings on your Mac.** No cloud, no GPU needed – just Apple Silicon magic. 🚀
 
-## 🌟 Features
+![Performance](https://img.shields.io/badge/Speed-44K_tokens/sec-green)
+![Models](https://img.shields.io/badge/Models-0.6B_|_4B_|_8B-blue)
+![Platform](https://img.shields.io/badge/Platform-Apple_Silicon-black)
 
-- **🚀 Optimized for Apple Silicon**: Leverages MLX framework for Metal acceleration
-- **⚡ Fast Inference**: ~10-20ms per embedding after warmup
-- **🎯 Multiple Model Support**: Choose between 0.6B, 4B, and 8B models
-- **📦 Simple Deployment**: Single Python file, minimal dependencies
-- **🔄 Batch Processing**: Efficient batch embedding with automatic chunking
-- **💾 Smart Caching**: LRU cache for frequently requested embeddings
-- **📊 Production Ready**: Health checks, metrics, proper error handling
-- **🔒 CORS Support**: Configurable CORS for web applications
-- **📝 Full Documentation**: Interactive API docs at `/docs`
+## ✨ What is this?
 
-## 📋 Requirements
+A simple, fast API server that runs state-of-the-art text embedding models locally on your Mac. Perfect for:
+- 🔍 Semantic search
+- 🤖 RAG applications  
+- 📊 Document clustering
+- 🎯 Similarity matching
 
+**Performance**: Process 44,000+ tokens/second with the small model, or get higher quality with larger models.
+
+## 🏃 Quick Start (2 minutes)
+
+### Requirements
 - Apple Silicon Mac (M1/M2/M3)
 - Python 3.9+
-- ~1GB free RAM for 4-bit quantized model
-- macOS 15.0+ (Monterey or later)
+- 1-5GB free space (depending on model)
 
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+### Install & Run
 
 ```bash
+# Clone and enter directory
 git clone https://github.com/yourusername/qwen3-embeddings.git
 cd qwen3-embeddings
-```
 
-### 2. Install Dependencies
-
-```bash
+# Install (one-time, ~30 seconds)
 pip install -r requirements.txt
-```
 
-Or for exact versions:
-
-```bash
-pip install -r requirements-lock.txt
-```
-
-### 3. Run the Server
-
-```bash
+# Run! 🎉
 python server.py
 ```
 
-The server will:
+That's it! The server is now running at `http://localhost:8000`
 
-1. Download the Qwen3 model (~900MB) on first run
-2. Warm up the model (compile Metal kernels)
-3. Start serving at `http://localhost:8000`
+On first run, it will download the model (~900MB) which takes about a minute.
 
-### 4. Test the API
+### Test it works
 
 ```bash
-# Single embedding
-curl -X POST "http://localhost:8000/embed" \
+# Generate an embedding
+curl -X POST http://localhost:8000/embed \
   -H "Content-Type: application/json" \
-  -d '{"text": "Hello, world!"}'
-
-# Batch embeddings
-curl -X POST "http://localhost:8000/embed_batch" \
-  -H "Content-Type: application/json" \
-  -d '{"texts": ["Hello", "World"]}'
-
-# Health check
-curl http://localhost:8000/health
+  -d '{"text": "Hello world"}'
 ```
 
-## 📖 API Documentation
+## 🎮 Choose Your Model
 
-### Interactive Documentation
+Three models available, from fast to powerful:
 
-Once the server is running, visit:
+| Model | Speed | Quality | Memory | Use When |
+|-------|-------|---------|--------|----------|
+| **Small** (default) | ⚡⚡⚡ 44K tok/s | ⭐⭐ | 900MB | Speed matters most |
+| **Medium** | ⚡⚡ 18K tok/s | ⭐⭐⭐ | 2.5GB | **Best balance** ✨ |
+| **Large** | ⚡ 11K tok/s | ⭐⭐⭐⭐ | 4.5GB | Quality matters most |
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+Use different models per request:
 
-### Available Models
+```python
+# Python example
+import requests
 
-The server supports three Qwen3 embedding models:
+# Fast model for high-volume
+requests.post("http://localhost:8000/embed", 
+    json={"text": "Quick search", "model": "small"})
 
-| Model | Alias | Parameters | Embedding Dim | Description |
-|-------|-------|------------|---------------|-------------|
-| Qwen3-Embedding-0.6B | `small`, `0.6b`, `default` | 0.6B | 1024 | Fast and efficient |
-| Qwen3-Embedding-4B | `medium`, `4b` | 4B | 2560 | Balanced performance |
-| Qwen3-Embedding-8B | `large`, `8b` | 8B | 4096 | Higher quality embeddings |
+# Quality model for important documents  
+requests.post("http://localhost:8000/embed",
+    json={"text": "Important document", "model": "large"})
+```
 
-### Endpoints
+## 📖 API Reference
 
-#### `POST /embed`
+**Interactive docs**: Visit http://localhost:8000/docs when server is running
 
-Generate embedding for a single text.
+### Core Endpoints
 
-**Request:**
-
-```json
+#### Generate Single Embedding
+```bash
+POST /embed
 {
   "text": "Your text here",
-  "model": "medium",  // Optional: "small", "medium", "large", or full model name
-  "normalize": true
+  "model": "small|medium|large"  # optional
 }
 ```
 
-**Response:**
-
-```json
-{
-  "embedding": [0.123, -0.456, ...],
-  "model": "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ",
-  "dim": 1024,
-  "normalized": true,
-  "processing_time_ms": 15.2
-}
-```
-
-#### `POST /embed_batch`
-
-Generate embeddings for multiple texts.
-
-**Request:**
-
-```json
+#### Generate Multiple Embeddings
+```bash
+POST /embed_batch
 {
   "texts": ["Text 1", "Text 2", "Text 3"],
-  "model": "medium",  // Optional: "small", "medium", "large", or full model name
-  "normalize": true
+  "model": "small|medium|large"  # optional
 }
 ```
 
-**Response:**
-
-```json
-{
-  "embeddings": [[...], [...], [...]],
-  "model": "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ",
-  "dim": 1024,
-  "count": 3,
-  "normalized": true,
-  "processing_time_ms": 42.1
-}
-```
-
-#### `GET /health`
-
-Health check endpoint for monitoring.
-
-**Response:**
-
-```json
-{
-  "status": "healthy",
-  "model_status": "ready",
-  "model_name": "mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ",
-  "embedding_dim": 1024,
-  "memory_usage_mb": 920.5,
-  "uptime_seconds": 3600.0
-}
-```
-
-#### `GET /metrics`
-
-Detailed metrics and configuration.
-
-#### `GET /models`
-
-List available models and their current status.
-
-## 🔧 Configuration
-
-Configure the server using environment variables:
-
-| Variable          | Description             | Default                                       |
-| ----------------- | ----------------------- | --------------------------------------------- |
-| `MODEL_NAME`      | MLX model to use        | `mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ` |
-| `PORT`            | Server port             | `8000`                                        |
-| `HOST`            | Server host             | `0.0.0.0`                                     |
-| `MAX_BATCH_SIZE`  | Maximum texts per batch | `32`                                          |
-| `MAX_TEXT_LENGTH` | Maximum tokens per text | `8192`                                        |
-| `LOG_LEVEL`       | Logging level           | `INFO`                                        |
-| `ENABLE_CORS`     | Enable CORS             | `true`                                        |
-| `CORS_ORIGINS`    | Allowed CORS origins    | `*`                                           |
-| `DEV_MODE`        | Enable auto-reload      | `false`                                       |
-
-### Example with Custom Configuration
-
+#### List Available Models
 ```bash
-MODEL_NAME=mlx-community/Qwen3-Embedding-0.6B-4bit-DWQ \
-PORT=8080 \
-MAX_BATCH_SIZE=64 \
-LOG_LEVEL=DEBUG \
-python server.py
+GET /models
 ```
 
-## 💻 Usage Examples
+#### Health Check
+```bash
+GET /health
+```
 
-### Python Client
+## 💻 Client Examples
 
+### Python
 ```python
 import requests
 import numpy as np
 
-class EmbeddingClient:
-    def __init__(self, base_url="http://localhost:8000"):
-        self.base_url = base_url
+def get_embedding(text, model="medium"):
+    response = requests.post(
+        "http://localhost:8000/embed",
+        json={"text": text, "model": model}
+    )
+    return np.array(response.json()["embedding"])
 
-    def embed(self, text: str, model: str = None) -> np.ndarray:
-        response = requests.post(
-            f"{self.base_url}/embed",
-            json={"text": text, "model": model}
-        )
-        return np.array(response.json()["embedding"])
-
-    def embed_batch(self, texts: list, model: str = None) -> np.ndarray:
-        response = requests.post(
-            f"{self.base_url}/embed_batch",
-            json={"texts": texts, "model": model}
-        )
-        return np.array(response.json()["embeddings"])
-
-    def list_models(self):
-        response = requests.get(f"{self.base_url}/models")
-        return response.json()
-
-# Usage
-client = EmbeddingClient()
-
-# Use default model (small)
-embedding = client.embed("Machine learning is amazing")
-print(f"Shape: {embedding.shape}")  # (1024,)
-
-# Use medium model
-embedding_medium = client.embed("Machine learning is amazing", model="medium")
-print(f"Shape: {embedding_medium.shape}")  # (2560,)
-
-# Use large model for higher quality
-embedding_large = client.embed("Machine learning is amazing", model="large")
-print(f"Shape: {embedding_large.shape}")  # (4096,)
-
-# Check available models
-models = client.list_models()
-print(f"Available models: {models['loaded_models']}")
+# Use it
+embedding = get_embedding("Machine learning is amazing")
+print(f"Shape: {embedding.shape}")  # (2560,) for medium model
 ```
 
-### JavaScript/TypeScript Client
-
+### JavaScript
 ```javascript
-async function getEmbedding(text, model = null) {
+async function getEmbedding(text, model = "medium") {
   const response = await fetch("http://localhost:8000/embed", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, model }),
+    headers: { "Content-Type": application/json" },
+    body: JSON.stringify({ text, model })
   });
   const data = await response.json();
   return data.embedding;
 }
 
-async function listModels() {
-  const response = await fetch("http://localhost:8000/models");
-  return await response.json();
-}
-
-// Usage
-// Use default model
-const embedding = await getEmbedding("Hello, world!");
-console.log(`Dimension: ${embedding.length}`); // 1024
-
-// Use medium model
-const embeddingMedium = await getEmbedding("Hello, world!", "medium");
-console.log(`Dimension: ${embeddingMedium.length}`); // 2560
-
-// Check available models
-const models = await listModels();
-console.log("Available models:", models.models);
+// Use it
+const embedding = await getEmbedding("Hello world");
+console.log(`Dimensions: ${embedding.length}`);
 ```
 
 ### Semantic Search Example
-
 ```python
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Your document corpus
-documents = [
-    "Machine learning is a subset of artificial intelligence",
-    "Python is a popular programming language",
-    "The weather today is sunny and warm",
-    "Neural networks are inspired by biological neurons"
+# Your documents
+docs = [
+    "Machine learning is a subset of AI",
+    "Python is a programming language",
+    "Neural networks are inspired by the brain"
 ]
 
-# Generate embeddings for all documents
-doc_embeddings = client.embed_batch(documents)
+# Get embeddings for all docs
+doc_embeddings = requests.post(
+    "http://localhost:8000/embed_batch",
+    json={"texts": docs}
+).json()["embeddings"]
 
-# Search query
-query = "AI and deep learning"
-query_embedding = client.embed(query)
+# Search
+query = "artificial intelligence"
+query_embedding = requests.post(
+    "http://localhost:8000/embed",
+    json={"text": query}
+).json()["embedding"]
 
-# Calculate similarities
+# Find most similar
 similarities = cosine_similarity([query_embedding], doc_embeddings)[0]
-
-# Get top results
-top_indices = np.argsort(similarities)[-3:][::-1]
-for idx in top_indices:
-    print(f"Score: {similarities[idx]:.3f} - {documents[idx]}")
+best_match = docs[similarities.argmax()]
+print(f"Best match: {best_match}")
 ```
 
-## 🧪 Testing
+## 🛠️ Advanced Usage
 
-Run the test suite:
+### Configuration
+
+Set environment variables to customize:
 
 ```bash
-# Run API tests
-python tests/test_api.py
+# Use a specific model by default
+MODEL_NAME=mlx-community/Qwen3-Embedding-4B-4bit-DWQ python server.py
 
-# Run with pytest (if installed)
-pytest tests/
+# Change port
+PORT=8080 python server.py
+
+# Development mode with auto-reload
+DEV_MODE=true python server.py
+
+# Increase batch size limit
+MAX_BATCH_SIZE=128 python server.py
 ```
 
-## 🚀 Production Deployment
-
-### Using systemd (Linux/macOS)
-
-Create `/etc/systemd/system/qwen3-embeddings.service`:
-
-```ini
-[Unit]
-Description=Qwen3 Embeddings Server
-After=network.target
-
-[Service]
-Type=simple
-User=youruser
-WorkingDirectory=/path/to/qwen3-embeddings
-Environment="PATH=/usr/local/bin:/usr/bin"
-ExecStart=/usr/bin/python3 /path/to/qwen3-embeddings/server.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
+### Performance Tuning
 
 ```bash
-sudo systemctl enable qwen3-embeddings
-sudo systemctl start qwen3-embeddings
+# Run benchmarks
+make benchmark
+
+# See what models are loaded
+curl http://localhost:8000/models
+
+# Check performance metrics
+curl http://localhost:8000/metrics
 ```
 
-### Using Docker (Experimental)
+### Production Deployment
 
-While this project is optimized for native Apple Silicon execution, you can containerize it:
+For production, use a process manager:
 
-```dockerfile
-FROM python:3.11-slim
+```bash
+# Install PM2
+npm install -g pm2
 
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Start server
+pm2 start server.py --interpreter python3 --name embeddings
 
-COPY server.py .
-EXPOSE 8000
-
-CMD ["python", "server.py"]
+# Auto-start on boot
+pm2 startup
+pm2 save
 ```
 
-Note: Docker on macOS doesn't have direct Metal access, so performance will be degraded.
-
-### Reverse Proxy with nginx
-
-```nginx
-server {
-    listen 80;
-    server_name embeddings.yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_read_timeout 300s;
-    }
-}
-```
+Or use the included systemd service file for Linux servers.
 
 ## 📊 Performance
 
-### Running Benchmarks
+Real-world performance on M2 Pro:
 
-The project includes a comprehensive benchmark script in the tests directory:
+| Operation | Performance | 
+|-----------|-------------|
+| Single embedding | 1-3ms |
+| Batch (32 texts) | 44,000 tokens/sec |
+| Concurrent requests | 200+ req/sec |
+| Cache speedup | 13x faster |
 
-```bash
-# Quick benchmark
-python tests/benchmark.py --quick
+The medium model offers the best quality/speed balance with 0.65 semantic coherence score.
 
-# Full benchmark with all tests
-python tests/benchmark.py --iterations 100 --workers 10
+## 🎯 Use Cases
 
-# Or use the Makefile (recommended)
-make benchmark       # Quick benchmark
-make benchmark-full  # Comprehensive benchmark
+### RAG (Retrieval Augmented Generation)
+```python
+# 1. Embed your documents
+embeddings = embed_batch(documents)
+store_in_vector_db(embeddings)
+
+# 2. Embed user query  
+query_embedding = embed(user_question)
+
+# 3. Find relevant docs
+relevant_docs = vector_db.search(query_embedding, top_k=5)
+
+# 4. Pass to LLM
+llm_response = llm.generate(user_question, context=relevant_docs)
 ```
 
-Benchmark results are saved to `tests/benchmarks/` which is gitignored.
-
-### Benchmark Results
-
-On M2 Pro MacBook Pro:
-
-| Metric                  | Performance     | Notes              |
-| ----------------------- | --------------- | ------------------ |
-| **Single Embedding**    |                 |                    |
-| - Short text            | ~1.4ms          | 2-3 words          |
-| - Medium text           | ~1.3ms          | 10-15 words        |
-| - Long text             | ~1.3ms          | 50+ words          |
-| **Batch Processing**    |                 |                    |
-| - Batch size 1          | 726 texts/sec   |                    |
-| - Batch size 10         | 1,887 texts/sec |                    |
-| - Batch size 32         | 2,117 texts/sec | Optimal batch size |
-| **Concurrent Requests** |                 |                    |
-| - 10 workers            | 207 req/sec     |                    |
-| - P95 latency           | 7.4ms           |                    |
-| - P99 latency           | 8.6ms           |                    |
-| **Cache Performance**   |                 |                    |
-| - Speedup               | 13.6x           |                    |
-| - Cached latency        | ~1.4ms          |                    |
-| **Resource Usage**      |                 |                    |
-| - Model load time       | ~1s             | Per model          |
-| - Memory usage (0.6B)   | ~900MB          |                    |
-| - Memory usage (4B)     | ~2.5GB          |                    |
-| - Memory usage (8B)     | ~4.5GB          |                    |
-
-### Optimization Tips
-
-1. **Batch Processing**: Group requests for better throughput
-2. **Text Length**: Shorter texts process faster
-3. **Caching**: Frequently requested embeddings are cached
-4. **Warm Start**: Keep the server running to avoid cold starts
-
-## 🔍 Troubleshooting
-
-| Issue                | Solution                                         |
-| -------------------- | ------------------------------------------------ |
-| Model download fails | Check internet connection and HuggingFace access |
-| Out of memory        | Reduce batch size or use system with more RAM    |
-| Slow performance     | Ensure running on Apple Silicon, not Intel Mac   |
-| Import errors        | Update mlx-lm: `pip install --upgrade mlx-lm`    |
-
-## 🛠️ Development
-
-### Running in Development Mode
-
-```bash
-DEV_MODE=true LOG_LEVEL=DEBUG python server.py
+### Semantic Deduplication
+```python
+# Find duplicate content
+embeddings = embed_batch(articles)
+similarity_matrix = cosine_similarity(embeddings)
+duplicates = np.where(similarity_matrix > 0.95)
 ```
 
-### Code Structure
+### Content Recommendation
+```python
+# Find similar items
+user_liked_embedding = embed(user_liked_item)
+all_embeddings = embed_batch(all_items)
+similarities = cosine_similarity([user_liked_embedding], all_embeddings)
+recommendations = all_items[similarities.argsort()[-10:]]
+```
+
+## 🐛 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "Out of memory" | Use smaller model or reduce batch size |
+| "Slow on first request" | Normal - model warming up. Keep server running. |
+| "Can't connect" | Check firewall, ensure port 8000 is free |
+| "Module not found" | Run `pip install -r requirements.txt` again |
+
+## 🚀 Why Use This?
+
+- **Privacy**: Your data never leaves your machine
+- **Speed**: Faster than cloud APIs (no network latency)  
+- **Cost**: Free after initial setup (no API fees)
+- **Reliability**: No internet required, no rate limits
+- **Quality**: State-of-the-art Qwen3 models with 4-bit quantization
+
+## 📦 What's Included
 
 ```
 qwen3-embeddings/
-├── server.py           # Main server implementation
-├── requirements.txt    # Python dependencies
-├── tests/
-│   └── test_api.py    # API tests
-├── examples/
-│   └── client_example.py  # Usage examples
-└── README.md          # This file
+├── server.py           # The entire server (one file!)
+├── requirements.txt    # Dependencies
+├── Makefile           # Convenience commands
+├── tests/             # Benchmarks and tests
+│   ├── test_api.py    # API tests
+│   └── benchmark.py   # Performance benchmarks
+└── examples/          # Usage examples
+    └── visualize_embeddings.py  # Embedding visualization
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! This is a simple, focused project:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the repo
+2. Create your feature branch
+3. Make your changes  
+4. Run tests: `make test`
+5. Submit a PR
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - use it however you want!
 
-## 🙏 Acknowledgments
+## 🙏 Credits
 
-- [MLX](https://github.com/ml-explore/mlx) - Apple's machine learning framework
-- [Qwen](https://github.com/QwenLM/Qwen) - The Qwen model family
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework for Python
-- The MLX Community for model conversions
+Built with:
+- [MLX](https://github.com/ml-explore/mlx) - Apple's ML framework
+- [Qwen](https://github.com/QwenLM/Qwen) - The embedding models
+- [FastAPI](https://fastapi.tiangolo.com/) - The web framework
 
-## 📮 Support
+---
 
-For issues and questions:
+**Questions?** Open an issue on GitHub or check the [interactive docs](http://localhost:8000/docs).
 
-- Open an issue on GitHub
-- Check existing issues for solutions
-- Consult the API documentation at `/docs`
+**Ready to start?** Just run `python server.py` 🎉
