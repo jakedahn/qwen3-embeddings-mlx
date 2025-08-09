@@ -2,8 +2,6 @@
 
 **Lightning-fast text embeddings on your Mac.** No cloud, no GPU needed – just Apple Silicon magic. 🚀
 
-Works great on all Apple Silicon Macs including the latest M4 chips!
-
 ![0.6B Speed](https://img.shields.io/badge/0.6B-44K_tokens/sec-green)
 ![4B Speed](https://img.shields.io/badge/4B-18K_tokens/sec-blue)
 ![8B Speed](https://img.shields.io/badge/8B-11K_tokens/sec-purple)
@@ -37,12 +35,16 @@ cd qwen3-embeddings
 
 # Install (one-time, ~30 seconds)
 pip install -r requirements.txt
+# Or: make install
 
 # Run! 🎉
 python server.py
+# Or: make run
 ```
 
 That's it! The server is now running at `http://localhost:8000`
+
+💡 **Tip**: Use `make help` to see all available shortcuts!
 
 On first run, it will download the model (~900MB) which takes about a minute.
 
@@ -189,6 +191,38 @@ print(f"Best match: {best_match}")
 
 ## 🛠️ Advanced Usage
 
+### Convenient Make Commands
+
+The project includes a `Makefile` with helpful shortcuts:
+
+```bash
+# Development
+make run              # Start the server
+make dev              # Run in development mode with auto-reload
+make test             # Run API tests
+make clean            # Remove cache and temp files
+
+# Benchmarking
+make benchmark        # Quick benchmark (all models)
+make benchmark-full   # Comprehensive benchmark (100 iterations)
+make benchmark-small  # Test just the 0.6B model
+make benchmark-medium # Test just the 4B model
+make benchmark-large  # Test just the 8B model
+make benchmark-stress # Stress test with large batches
+make benchmark-extreme # EXTREME test (warning: intensive!)
+
+# Utilities
+make health           # Check if server is running
+make visualize        # Generate embeddings for TensorFlow Projector
+make lint             # Run code linting
+make format           # Format code with black
+make install          # Install dependencies
+make install-dev      # Install dev dependencies
+
+# See all commands
+make help             # Show all available commands
+```
+
 ### Configuration
 
 Set environment variables to customize:
@@ -251,7 +285,7 @@ Real-world benchmarks from a 16" MacBook Pro (2023) with M2 Max chip and 32GB RA
 
 The medium model offers the best quality/speed balance with 0.65 semantic coherence score.
 
-*Performance scales with Apple Silicon generation - expect even better results on M3/M4 chips!*
+_Performance scales with Apple Silicon generation - expect even better results on M3/M4 chips!_
 
 ## 🎯 Use Cases
 
